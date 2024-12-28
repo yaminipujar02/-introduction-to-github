@@ -1,0 +1,553 @@
+import java.io.Serializable;
+import java.time.LocalDate;
+
+public class Task implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private String title;
+    private String description;
+    private LocalDate dueDate;
+    private boolean isCompleted;
+
+    public Task(String title, String description, LocalDate dueDate) {
+        this.title = title;
+        this.description = description;
+        this.dueDate = dueDate;
+        this.isCompleted = false;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public boolean isCompleted() {
+        return isCompleted;
+    }
+
+    public void markCompleted() {
+        this.isCompleted = true;
+    }
+
+    public String toString() {
+        return "Task{" +
+                "title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", dueDate=" + dueDate +
+                ", isCompleted=" + isCompleted +
+                '}';
+    }
+}
+import java.io.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class TaskManager {
+    private List<Task> tasks;
+    private static final String FILE_NAME = "tasks.ser";
+
+    public TaskManager() {
+        tasks = new ArrayList<>();
+        loadTasks();
+    }
+
+    public void addTask(String title, String description, LocalDate dueDate) {
+        tasks.add(new Task(title, description, dueDate));
+    }
+
+    public void markTaskCompleted(String title) {
+        for (Task task : tasks) {
+            if (task.getTitle().equalsIgnoreCase(title)) {
+                task.markCompleted();
+                System.out.println("Task marked as completed!");
+                return;
+            }
+        }
+        System.out.println("Task not found.");
+    }
+
+    public void deleteTask(String title) {
+        tasks.removeIf(task -> task.getTitle().equalsIgnoreCase(title));
+        System.out.println("Task deleted!");
+    }
+
+    public void viewAllTasks() {
+        if (tasks.isEmpty()) {
+            System.out.println("No tasks available.");
+        } else {
+            tasks.forEach(System.out::println);
+        }
+    }
+
+    public void viewIncompleteTasks() {
+        List<Task> incompleteTasks = tasks.stream()
+                .filter(task -> !task.isCompleted())
+                .collect(Collectors.toList());
+
+        if (incompleteTasks.isEmpty()) {
+            System.out.println("No incomplete tasks.");
+        } else {
+            incompleteTasks.forEach(System.out::println);
+        }
+    }
+
+    public void saveTasks() {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            out.writeObject(tasks);
+            System.out.println("Tasks saved to file.");
+        } catch (IOException e) {
+            System.out.println("Error saving tasks: " + e.getMessage());
+        }
+    }
+
+    public void loadTasks() {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            tasks = (List<Task>) in.readObject();
+        } catch (FileNotFoundException e) {
+            System.out.println("No previous tasks found, starting fresh.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error loading tasks: " + e.getMessage());
+        }
+    }
+}
+import java.time.LocalDate;
+import java.util.Scanner;
+
+public class TaskApp {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final TaskManager taskManager = new TaskManager();
+
+    public static void main(String[] args) {
+        System.out.println("Welcome to the Task Management System!");
+
+        while (true) {
+            printMenu();
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    createTask();
+                    break;
+                case "2":
+                    viewAllTasks();
+                    break;
+                case "3":
+                    viewIncompleteTasks();
+                    break;
+                case "4":
+                    markTaskAsCompleted();
+                    break;
+                case "5":
+                    deleteTask();
+                    break;
+                case "6":
+                    taskManager.saveTasks();
+                    System.out.println("Exiting... Your tasks have been saved.");
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void printMenu() {
+        System.out.println("\nMenu:");
+        System.out.println("1. Create a new task");
+        System.out.println("2. View all tasks");
+        System.out.println("3. View incomplete tasks");
+        System.out.println("4. Mark task as completed");
+        System.out.println("5. Delete a task");
+        System.out.println("6. Exit and save tasks");
+        System.out.print("Choose an option: ");
+    }
+
+    private static void createTask() {
+        System.out.print("Enter task title: ");
+        String title = scanner.nextLine();
+
+        System.out.print("Enter task description: ");
+        String description = scanner.nextLine();
+
+        System.out.print("Enter task due date (YYYY-MM-DD): ");
+        String dueDateString = scanner.nextLine();
+        LocalDate dueDate = LocalDate.parse(dueDateString);
+
+        taskManager.addTask(title, description, dueDate);
+        System.out.println("Task created successfully!");
+    }
+
+    private static void viewAllTasks() {
+        System.out.println("All tasks:");
+        taskManager.viewAllTasks();
+    }
+
+    private static void viewIncompleteTasks() {
+        System.out.println("Incomplete tasks:");
+        taskManager.viewIncompleteTasks();
+    }
+
+    private static void markTaskAsCompleted() {
+        System.out.print("Enter the title of the task to mark as completed: ");
+        String title = scanner.nextLine();
+        taskManager.markTaskCompleted(title);
+    }
+
+    private static void deleteTask() {
+        System.out.print("Enter the title of the task to delete: ");
+        String title = scanner.nextLine();
+        taskManager.deleteTask(title);
+    }
+}
+# Task Management System
+
+This is a simple Task Management System developed in Java. It allows users to:
+
+- Create new tasks with a title, description, and due date.
+- View all tasks or filter out incomplete tasks.
+- Mark tasks as completed or delete them.
+- Save tasks to a file and load them back on application start.
+
+## Features
+
+- Object-Oriented design with `Task` and `TaskManager` classes.
+- Task persistence using file I/O (serialization).
+- Simple console-based user interface.
+
+## How to Use
+
+1. Clone the repository.
+2. Compile the Java files using `javac` or directly from an IDE (e.g., IntelliJ IDEA, Eclipse).
+3. Run the `TaskApp` class to start the application.
+
+```bash
+javac Task.java TaskManager.java TaskApp.java
+java TaskApp
+import java.io.Serializable;
+
+public class Student implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private String name;
+    private int age;
+    private String studentID;
+
+    public Student(String name, int age, String studentID) {
+        this.name = name;
+        this.age = age;
+        this.studentID = studentID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public String getStudentID() {
+        return studentID;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", studentID='" + studentID + '\'' +
+                '}';
+    }
+}
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class StudentManager {
+    private List<Student> students;
+    private static final String FILE_NAME = "students.ser";
+
+    public StudentManager() {
+        students = new ArrayList<>();
+        loadStudents();
+    }
+
+    public void addStudent(String name, int age, String studentID) {
+        students.add(new Student(name, age, studentID));
+    }
+
+    public void viewStudents() {
+        if (students.isEmpty()) {
+            System.out.println("No students available.");
+        } else {
+            students.forEach(System.out::println);
+        }
+    }
+
+    public void searchStudentByName(String name) {
+        boolean found = false;
+        for (Student student : students) {
+            if (student.getName().equalsIgnoreCase(name)) {
+                System.out.println(student);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            System.out.println("Student not found.");
+        }
+    }
+
+    public void saveStudents() {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            out.writeObject(students);
+            System.out.println("Students saved to file.");
+        } catch (IOException e) {
+            System.out.println("Error saving students: " + e.getMessage());
+        }
+    }
+
+    public void loadStudents() {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            students = (List<Student>) in.readObject();
+        } catch (FileNotFoundException e) {
+            System.out.println("No previous student records found.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error loading students: " + e.getMessage());
+        }
+    }
+}
+import java.util.Scanner;
+
+public class StudentApp {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final StudentManager studentManager = new StudentManager();
+
+    public static void main(String[] args) {
+        System.out.println("Welcome to the Student Management System!");
+
+        while (true) {
+            printMenu();
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    addStudent();
+                    break;
+                case "2":
+                    studentManager.viewStudents();
+                    break;
+                case "3":
+                    searchStudent();
+                    break;
+                case "4":
+                    studentManager.saveStudents();
+                    System.out.println("Exiting... Students saved.");
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void printMenu() {
+        System.out.println("\nMenu:");
+        System.out.println("1. Add a student");
+        System.out.println("2. View all students");
+        System.out.println("3. Search student by name");
+        System.out.println("4. Exit and save");
+        System.out.print("Choose an option: ");
+    }
+
+    private static void addStudent() {
+        System.out.print("Enter student name: ");
+        String name = scanner.nextLine();
+
+        System.out.print("Enter student age: ");
+        int age = Integer.parseInt(scanner.nextLine());
+
+        System.out.print("Enter student ID: ");
+        String studentID = scanner.nextLine();
+
+        studentManager.addStudent(name, age, studentID);
+        System.out.println("Student added successfully!");
+    }
+
+    private static void searchStudent() {
+        System.out.print("Enter student name to search: ");
+        String name = scanner.nextLine();
+        studentManager.searchStudentByName(name);
+    }
+}
+# Student Management System
+
+This is a simple Student Management System developed in Java. It allows users to:
+
+- Add new students with their name, age, and student ID.
+- View all students.
+- Search for a student by their name.
+- Save students to a file and load them back when the application restarts.
+
+## Features
+
+- Object-Oriented design with `Student` and `StudentManager` classes.
+- Student persistence using file I/O (serialization).
+- Simple console-based user interface.
+
+## How to Use
+
+1. Clone the repository.
+2. Compile the Java files using `javac` or directly from an IDE (e.g., IntelliJ IDEA, Eclipse).
+3. Run the `StudentApp` class to start the application.
+
+```bash
+javac Student.java StudentManager.java StudentApp.java
+java StudentApp
+public class Contact {
+    private String name;
+    private String phone;
+    private String email;
+
+    public Contact(String name, String phone, String email) {
+        this.name = name;
+        this.phone = phone;
+        this.email = email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    @Override
+    public String toString() {
+        return "Contact{name='" + name + "', phone='" + phone + "', email='" + email + "'}";
+    }
+}
+import java.util.ArrayList;
+import java.util.List;
+
+public class ContactManager {
+    private List<Contact> contacts;
+
+    public ContactManager() {
+        contacts = new ArrayList<>();
+    }
+
+    public void addContact(String name, String phone, String email) {
+        contacts.add(new Contact(name, phone, email));
+    }
+
+    public void listContacts() {
+        if (contacts.isEmpty()) {
+            System.out.println("No contacts available.");
+        } else {
+            contacts.forEach(System.out::println);
+        }
+    }
+
+    public void searchContactByName(String name) {
+        contacts.stream()
+                .filter(contact -> contact.getName().equalsIgnoreCase(name))
+                .forEach(System.out::println);
+    }
+}
+import java.util.Scanner;
+
+public class ContactApp {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final ContactManager contactManager = new ContactManager();
+
+    public static void main(String[] args) {
+        while (true) {
+            System.out.println("\nContact Manager Menu:");
+            System.out.println("1. Add Contact");
+            System.out.println("2. List All Contacts");
+            System.out.println("3. Search Contact by Name");
+            System.out.println("4. Exit");
+            System.out.print("Choose an option: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    addContact();
+                    break;
+                case "2":
+                    contactManager.listContacts();
+                    break;
+                case "3":
+                    searchContact();
+                    break;
+                case "4":
+                    System.out.println("Exiting...");
+                    return;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void addContact() {
+        System.out.print("Enter name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter phone: ");
+        String phone = scanner.nextLine();
+        System.out.print("Enter email: ");
+        String email = scanner.nextLine();
+        contactManager.addContact(name, phone, email);
+        System.out.println("Contact added successfully!");
+    }
+
+    private static void searchContact() {
+        System.out.print("Enter name to search: ");
+        String name = scanner.nextLine();
+        contactManager.searchContactByName(name);
+    }
+}
+# Simple Contact Manager
+
+A simple Java-based contact manager that allows you to:
+
+- Add new contacts (name, phone, and email).
+- List all stored contacts.
+- Search for contacts by name.
+
+## Features
+
+- Add, list, and search contacts.
+- Simple console-based interface.
+
+## How to Run
+
+1. Clone this repository.
+2. Compile and run the Java files.
+
+```bash
+javac Contact.java ContactManager.java ContactApp.java
+java ContactApp
